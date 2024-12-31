@@ -2,7 +2,7 @@ I have modified this repository and app.py to use GFPGAN. you can do basic infer
 changes in code can be seen through commits.
 ## Here is the highlighted changes in scripts:
 ### 1. Script to setup GFPGAN model
-'''
+```
 model_urls = {
     'GFPGANv1.4.pth': "https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.4.pth",
     'CodeFormer.pth': "https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/CodeFormer.pth",
@@ -42,16 +42,16 @@ def enhance_faces_gfp(image, output_path):
     cv2.imwrite(output_path, img_enhanced)
     return img_enhanced
 
-'''
+```
 
 ### 2. changes in script to enhance each frame using GFPGAN
 
-'''
+```
         combine_frame = get_image(ori_frame,res_frame,bbox)
         # changes done here 
         enhanced_combine_frame=enhance_faces_gfp(combine_frame,f"{result_img_save_path}/{str(i).zfill(8)}.png")
 
-'''
+```
 ## Complete usage of Musetalk+GFPGAN
 ### Setup MuseTalk and dependencies of GFPGAN
 We recommend a python version >=3.10 and cuda version =11.7. Then build environment as follows:
