@@ -1,7 +1,59 @@
 I have modified this repository and app.py to use GFPGAN. you can do basic inference anyway or can import inference function from app.py and see results with gfpgan.
+changes in code can be seen through commits.
+## Here is the highlighted changes in scripts:
+### 1. Script to setup GFPGAN model
+'''
+model_urls = {
+    'GFPGANv1.4.pth': "https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.4.pth",
+    'CodeFormer.pth': "https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/CodeFormer.pth",
+}
 
-## Setup MuseTalk and dependencies of GFPGAN
-### Build environment
+
+# This function downloads a file from a given URL and saves it with the specified filename.
+# It streams the content, writing it in chunks to handle large files without consuming too much memory.
+# It also prints out the status of the download.
+def download_file(url, filename):
+    response = requests.get(url, stream=True)
+    if response.status_code == 200:
+        with open(filename, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=1024):
+                f.write(chunk)
+        print(f"Downloaded {filename}")
+    else:
+        print(f"Failed to download {filename}. Status code: {response.status_code}")
+
+
+for filename, url in model_urls.items():
+    file_path = os.path.join('weights', filename)
+    if not os.path.exists(file_path):
+        print(f"Downloading {filename}...")
+        download_file(url, file_path)
+    else:
+        print(f"{filename} already exists. Skipping download.")
+
+gfpgan_model_path = 'weights/GFPGANv1.4.pth'
+# Initialize GFPGAN
+face_enhancer = GFPGANer(model_path=gfpgan_model_path, upscale=10, arch='clean', channel_multiplier=2, bg_upsampler=realesrganer)
+
+# Function to enhance image with GFPGAN
+def enhance_faces_gfp(image, output_path):
+    # Enhance faces with GFPGAN
+    _, _, img_enhanced = face_enhancer.enhance(img, has_aligned=False, only_center_face=False, paste_back=True)
+    cv2.imwrite(output_path, img_enhanced)
+    return img_enhanced
+
+'''
+
+### 2. changes in script to enhance each frame using GFPGAN
+
+'''
+        combine_frame = get_image(ori_frame,res_frame,bbox)
+        # changes done here 
+        enhanced_combine_frame=enhance_faces_gfp(combine_frame,f"{result_img_save_path}/{str(i).zfill(8)}.png")
+
+'''
+## Complete usage of Musetalk+GFPGAN
+### Setup MuseTalk and dependencies of GFPGAN
 We recommend a python version >=3.10 and cuda version =11.7. Then build environment as follows:
 
 ```shell
