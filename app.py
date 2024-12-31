@@ -29,6 +29,59 @@ import imageio
 import ffmpeg
 from moviepy.editor import *
 
+# GFPGAN dependencies
+import requests
+import base64
+import cv2
+import torch
+from torchvision import models, transforms
+from PIL import Image
+from gfpgan.utils import GFPGANer
+import requests
+from diffusers import DiffusionPipeline, StableDiffusionXLImg2ImgPipeline 
+from torchvision.transforms import ToTensor, Normalize, ConvertImageDtype
+
+
+os.makedirs('weights', exist_ok=True)
+
+model_urls = {
+    'GFPGANv1.4.pth': "https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.4.pth",
+    'CodeFormer.pth': "https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/CodeFormer.pth",
+}
+
+
+# This function downloads a file from a given URL and saves it with the specified filename.
+# It streams the content, writing it in chunks to handle large files without consuming too much memory.
+# It also prints out the status of the download.
+def download_file(url, filename):
+    response = requests.get(url, stream=True)
+    if response.status_code == 200:
+        with open(filename, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=1024):
+                f.write(chunk)
+        print(f"Downloaded {filename}")
+    else:
+        print(f"Failed to download {filename}. Status code: {response.status_code}")
+
+
+for filename, url in model_urls.items():
+    file_path = os.path.join('weights', filename)
+    if not os.path.exists(file_path):
+        print(f"Downloading {filename}...")
+        download_file(url, file_path)
+    else:
+        print(f"{filename} already exists. Skipping download.")
+
+gfpgan_model_path = 'weights/GFPGANv1.4.pth'
+# Initialize GFPGAN
+face_enhancer = GFPGANer(model_path=gfpgan_model_path, upscale=10, arch='clean', channel_multiplier=2, bg_upsampler=realesrganer)
+
+# Function to enhance image with GFPGAN
+def enhance_faces_gfp(image, output_path):
+    # Enhance faces with GFPGAN
+    _, _, img_enhanced = face_enhancer.enhance(img, has_aligned=False, only_center_face=False, paste_back=True)
+    cv2.imwrite(output_path, img_enhanced)
+    return img_enhanced
 
 ProjectDir = os.path.abspath(os.path.dirname(__file__))
 CheckpointsDir = os.path.join(ProjectDir, "models")
@@ -222,7 +275,8 @@ def inference(audio_path,video_path,bbox_shift,progress=gr.Progress(track_tqdm=T
             continue
         
         combine_frame = get_image(ori_frame,res_frame,bbox)
-        cv2.imwrite(f"{result_img_save_path}/{str(i).zfill(8)}.png",combine_frame)
+        # changes done here 
+        enhanced_combine_frame=enhance_faces_gfp(combine_frame,f"{result_img_save_path}/{str(i).zfill(8)}.png")
         
     # cmd_img2video = f"ffmpeg -y -v fatal -r {fps} -f image2 -i {result_img_save_path}/%08d.png -vcodec libx264 -vf format=rgb24,scale=out_color_matrix=bt709,format=yuv420p temp.mp4"
     # print(cmd_img2video)
