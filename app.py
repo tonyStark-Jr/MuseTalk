@@ -36,7 +36,7 @@ import cv2
 import torch
 from torchvision import models, transforms
 from PIL import Image
-from gfpgan.utils import GFPGANer
+from GFPGAN.gfpgan.utils import GFPGANer
 import requests
 from diffusers import DiffusionPipeline, StableDiffusionXLImg2ImgPipeline 
 from torchvision.transforms import ToTensor, Normalize, ConvertImageDtype
